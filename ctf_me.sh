@@ -27,21 +27,21 @@ addhost() {
 
 function usage {
 	echo "#     usage													"
-	echo "#     > ./ctf_me IP HOSTNAME									"
+	echo "#     > ./ctf_me IP HOSTNAME											"
 	echo "#         													"		
 	echo "#        : 	IP												"	
-	echo "#         	Enter the CTF Box IP							"	
+	echo "#         	Enter the CTF Box IP										"	
 	echo "#         													"
-	echo "#        :   HOSTNAME 										"	
-	echo "#         	Enter the HOSTNAME you would like to set		"	
+	echo "#        :   HOSTNAME 												"	
+	echo "#         	Enter the HOSTNAME you would like to set							"	
 	echo "#         													"	
-	echo "#         	Example: grandpa.htb							"
-	echo "#						 steelmountain.thm						"
+	echo "#         	Example: grandpa.htb										"
+	echo "#						 steelmountain.thm							"
 	echo "#         													"	
-	echo "#       **WARNING**  											"	
-	echo "#         Script WILL install GoBuster and Sublit3r			"	
+	echo "#       **WARNING**  												"	
+	echo "#         Script WILL install GoBuster and Sublit3r								"	
 	echo "#         													"		
-	echo "#		Created by @aChocolateChippPancake 						"
+	echo "#		Created by @aChocolateChippPancake 									"
 }
 if [ `whoami` != root ]; then
     echo "Please run this script as root or using sudo"
@@ -66,17 +66,17 @@ fi
 # Checking if directory exists
 if [ -d "ctf_me" ] 
 then
-	echo -e "The directory ctf_me Exists!"
-	echo -e "**************************************"
-	echo -e "**************************************"
-	echo -e "**************************************"
-	echo -e "**************************************"
-	echo -e "Creating folder for $HOSTNAME		   "
+	echo "The directory ctf_me Exists!"
+	echo "**************************************"
+	echo "**************************************"
+	echo "**************************************"
+	echo "**************************************"
+	echo "Creating folder for $HOSTNAME		   "
 	mkdir ctf_me/$HOSTNAME
-	echo -e "**************************************"
-	echo -e "**************************************"
-	echo -e "**************************************"
-	echo -e "**************************************"
+	echo "**************************************"
+	echo "**************************************"
+	echo "**************************************"
+	echo -e"**************************************"
 fi
 
 # If it does not exist, create it
@@ -102,7 +102,7 @@ mkdir ctf_me/$HOSTNAME/nmap
 # Read the output of the nmap | awk commands into the ports array
 IFS=$'\n' read -r -d '' -a ports < <(
   # Pipe the result of nmap to awk for processing
-  nmap -sS -oA ctf_me/$IP/openports "$IP" |
+  nmap -sS -oA ctf_me/$HOSTNAME/openports "$IP" |
     awk -F'/' '
       /[[:space:]]+open[[:space:]]+/{
         p[$IP]++
@@ -113,55 +113,70 @@ IFS=$'\n' read -r -d '' -a ports < <(
     }'
 )
 
-portlist=""
+emptylist=""
 
 # Go through the output ports and add them into a conjoined string like 21,80,8080
 if [ ${#ports[@]} -gt 0 ]; then
   for p in "${ports[@]}"; do
-    portlist+=$p","
+  	q="${p:0:2}";
+    	emptylist+=$q","
   done
 fi
 
 # Edit list name and remove last comma
-portlist=${portlist::-1}
+portlist=${emptylist::-1};
+echo "$portlist"
 
-# make sure the list isnt empty...
-if [ -z "$portlist" ]
-then
-      echo "No ports available"
-	  echo "Exiting"
-	  exit;
-else
+if [[ ! $portlist =~ [0-9] ]]; then
+	echo "No Ports are Open!"
+	exit;
+fi
 
 # portlist has been created
 
 # check if 21 exists, then try anonymous login
-if [[ $portlist == *"21"* ]]; then
+if [[ $portlist = *"21"* ]]; then
 	echo "Scanning For anonymous FTP result"
-	nmap -T5 -p 21 --script ftp-anon $IP -oA ctf_me/$HOSTNAME/nmap/AnonFTP
+	mkdir ctf_me/$HOSTNAME/nmap/AnonFTP
+	nmap -T5 -p 21 --script ftp-anon $IP -oA ctf_me/$HOSTNAME/nmap/AnonFTP/AnonFTP
+else
+	echo "Port 21 is not open skipping FTP Scan..."
 fi
+
 
 # check / scan for RDP
 if [[ $portlist == *"3389"* ]]; then
 	echo "Scanning for RDP Ciphers and connection details"
-	nmap -T5 -p 3389 --script rdp-enum-encryption $IP -oA ctf_me/$HOSTNAME/nmap/RDPEnum
+	mkdir tf_me/$HOSTNAME/nmap/RDPEnum
+	nmap -T5 -p 3389 --script rdp-enum-encryption $IP -oA ctf_me/$HOSTNAME/nmap/RDPEnum/RDPEnum
+else
+	echo "Port 3389 is not open skipping RDP scan..."
 fi
 
 # check / scan for SMB
 if [[ $portlist == *"445"* ]]; then
-	echo "Scanning for RDP Ciphers and connection details"
-	nmap --script smb-os-discovery.nse -p445 $IP -oA ctf_me/$HOSTNAME/nmap/SMBenum
+	echo "Scanning for SMB"
+	mkdir ctf_me/$HOSTNAME/nmap/SMB_Scan
+	nmap --script=smb-enum-shares.nse,smb-enum-users.nse,smb-os-discovery.nse -p445 $IP -oA ctf_me/$HOSTNAME/nmap/SMB_Scan/SMBenum
+	nmap -p 445 -vv --script=smb-vuln-cve2009-3103.nse,smb-vuln-ms06-025.nse,smb-vuln-ms07-029.nse,smb-vuln-ms08-067.nse,smb-vuln-ms10-054.nse,smb-vuln-ms10-061.nse,smb-vuln-ms17-010.nse $IP -oA ctf_me/$HOSTNAME/nmap/SMB_Scan/SMBvulnerabilitycheck
+	nmap –script smb-check-vulns.nse –script-args=unsafe=1 -p445 $IP -oA ctf_me/$HOSTNAME/nmap/SMB_Scan/anotherVulnCheck
+	
+else
+	echo "Port 445 is not open skipping SMB scan..."
 fi
 
 
 echo "Generic Version Scan"
-nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS -Pn
+mkdir ctf_me/$HOSTNAME/nmap/Generic_OS
+nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS/Generic_OS -Pn
 
 echo "Vulnerability Scan"
-nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan -Pn
+mkdir ctf_me/$HOSTNAME/nmap/vulnerabilityScan
+nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan/vulnerabilityScan -Pn
 
 echo "Scan UDP"
-nmap -v -T5 -Pn -sU --top-ports 100 $1 -oA ctf_me/$1/nmap/UDPScan
+mkdir ctf_me/$HOSTNAME/nmap/UDPScan
+nmap -v -T5 -Pn -sU --top-ports 100 $IP -oA ctf_me/$HOSTNAME/nmap/UDPScan/UDPScan
 
 
 # nmaps completed
@@ -178,38 +193,46 @@ else
 fi
 
 echo "Checking for GoBuster"
-if ! command -v <gobuster> &> /dev/null
-then
-    echo "gobuster was not found"
-	echo "***Installing***"
-	apt install gobuster
-else
-	echo "gobuster is already installed. Continuing."
-fi
+
+command -v gobuster >/dev/null 2>&1 || 
+{ 
+	echo >&2 "gobuster was not found\n********Installing********"; 
+	apt install gobuster;
+}
+
 
 if [[ $portlist == *"80"* ]]; then
 	echo "Directory Enumeration via Port 80"
-	gobuster -e -u http://$HOSTNAME:80/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_80_output.txt
+	gobuster -e -u http://$IP:80/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_80_output.txt
+else
+	echo "Port 80 is not open skipping Directory Enumeration Attempt 1"
 fi
+
 if [[ $portlist == *"443"* ]]; then
 	echo "Directory Enumeration via Port 443"
-	gobuster -e -u http://$HOSTNAME:443/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_443_output.txt
+	gobuster -e -u http://$IP:443/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_443_output.txt
+else
+	echo "Port 443 is not open skipping Directory Enumeration Attempt 2"
 fi
+
 if [[ $portlist == *"8080"* ]]; then
 	echo "Directory Enumeration via Port 8080"
-	gobuster -e -u http://$HOSTNAME:8080/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_8080_output.txt
+	gobuster -e -u http://$IP:8080/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_8080_output.txt
+else
+	echo "Port 8080 is not open skipping Directory Enumeration Attempt 3"
 fi
+
 
 
 echo "Checking for sublist3r"
-if ! command -v <sublist3r> &> /dev/null
-then
-    echo "sublist3r was not found"
-	echo "***Installing***"
-	apt install sublist3r
-else
-	echo "sublist3r is already installed. Continuing."
-fi
+
+command -v gobuster >/dev/null 2>&1 || 
+{ 
+	echo >&2 "sublist3r was not found\n********Installing********"; 
+	apt install sublist3r;
+}
+
 mkdir ctf_me/$HOSTNAME/sublist3r_output
 sublist3r -d $HOSTNAME -b -t 100 --output ctf_me/$HOSTNAME/sublist3r_output/sublist3r_output.txt
+
 

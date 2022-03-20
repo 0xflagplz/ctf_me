@@ -21,10 +21,10 @@
 		Created by @aChocolateChippPancake 	
 	===========================================================================================================================
 Default Scans:
-  > nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS -Pn
-  > nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan -Pn
-  > nmap -v -T5 -Pn -sU --top-ports 100 $1 -oA ctf_me/$1/nmap/UDPScan
-  > sublist3r -d $HOSTNAME -b -t 100 --output ctf_me/$HOSTNAME/sublist3r_output/sublist3r_output.txt
+  > nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS -Pn  
+  > nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan -Pn  
+  > nmap -v -T5 -Pn -sU --top-ports 100 $1 -oA ctf_me/$1/nmap/UDPScan  
+  > sublist3r -d $HOSTNAME -b -t 100 --output ctf_me/$HOSTNAME/sublist3r_output/sublist3r_output.txt  
 
 IF Port 3389:
 > nmap -T5 -p 3389 --script rdp-enum-encryption $IP -oA ctf_me/$HOSTNAME/nmap/RDPEnum

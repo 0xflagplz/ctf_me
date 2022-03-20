@@ -2,6 +2,7 @@
 
 ## This begins deafult nmap / gobuster / sublist3r
 ### I do plan on adding more tools, but I just need to automate all the annoying things you do 100% of the time
+### Adds provided IP/hostname to /etc/hosts
 	===========================================================================================================================
      usage													
      > ./name IP HOSTNAME									

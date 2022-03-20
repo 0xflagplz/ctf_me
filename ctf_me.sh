@@ -3,6 +3,7 @@ ETC_HOSTS=/etc/hosts
 HOSTNAME=$2
 IP=$1
 
+# Function which adds host to /etc/hosts
 addhost() {
     echo "adding host";
     HOSTS_LINE="$IP\t$HOSTNAME"
@@ -42,24 +43,13 @@ function usage {
 	echo "#         													"		
 	echo "#		Created by @aChocolateChippPancake 						"
 }
-function needSomeSpace {
-echo -e " "
-echo -e " "
-echo -e " "
-echo -e " "
-echo -e " "
-echo -e " "
-echo -e " "
-echo -e " "
-}
-
-
-
 if [ `whoami` != root ]; then
     echo "Please run this script as root or using sudo"
     exit
 fi
 
+# add host to /etc/hosts
+addhost()
 
 # IP and hostname are provided
 if [ -z "$1" ] || [ -z "$2" ]
@@ -67,6 +57,7 @@ if [ -z "$1" ] || [ -z "$2" ]
 	usage
 	exit;
 fi
+
 # check for help
 if [ $1 = "help" ] || [ $1 = "h" ] || [ $1 = "-h" ] || [ $1 = "-help" ]; then
 	usage
@@ -87,13 +78,12 @@ then
 	echo -e "**************************************"
 	echo -e "**************************************"
 fi
+
 # If it does not exist, create it
 echo -e "Directory does not exist... making it"
+
+# Make parent Directory [ctf name]
 mkdir -p ctf_me/$HOSTNAME
-needSomeSpace
-
-
-
 
 #test if host is live
 if ping -c 1 -W 1 $HOSTNAME; then
@@ -105,7 +95,10 @@ else
 fi
 
 echo -e "Start Nmap Scans"
+
+# Make nmap directory
 mkdir ctf_me/$HOSTNAME/nmap
+
 # Read the output of the nmap | awk commands into the ports array
 IFS=$'\n' read -r -d '' -a ports < <(
   # Pipe the result of nmap to awk for processing
@@ -119,14 +112,20 @@ IFS=$'\n' read -r -d '' -a ports < <(
         print k
     }'
 )
+
 portlist=""
 
+# Go through the output ports and add them into a conjoined string like 21,80,8080
 if [ ${#ports[@]} -gt 0 ]; then
   for p in "${ports[@]}"; do
     portlist+=$p","
   done
 fi
+
+# Edit list name and remove last comma
 portlist=${portlist::-1}
+
+# make sure the list isnt empty...
 if [ -z "$portlist" ]
 then
       echo "No ports available"
@@ -147,11 +146,13 @@ if [[ $portlist == *"3389"* ]]; then
 	echo "Scanning for RDP Ciphers and connection details"
 	nmap -T5 -p 3389 --script rdp-enum-encryption $IP -oA ctf_me/$HOSTNAME/nmap/RDPEnum
 fi
+
 # check / scan for SMB
 if [[ $portlist == *"445"* ]]; then
 	echo "Scanning for RDP Ciphers and connection details"
 	nmap --script smb-os-discovery.nse -p445 $IP -oA ctf_me/$HOSTNAME/nmap/SMBenum
 fi
+
 
 echo "Generic Version Scan"
 nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS -Pn
@@ -161,6 +162,7 @@ nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan 
 
 echo "Scan UDP"
 nmap -v -T5 -Pn -sU --top-ports 100 $1 -oA ctf_me/$1/nmap/UDPScan
+
 
 # nmaps completed
 

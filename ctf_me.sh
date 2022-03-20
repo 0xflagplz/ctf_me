@@ -76,11 +76,13 @@ then
 	echo "**************************************"
 	echo "**************************************"
 	echo "**************************************"
-	echo -e"**************************************"
+	echo "**************************************"
 fi
 
 # If it does not exist, create it
-echo -e "Directory does not exist... making it"
+echo "Directory does not exist... making it"
+echo ""
+echo ""
 
 # Make parent Directory [ctf name]
 mkdir -p ctf_me/$HOSTNAME
@@ -88,13 +90,16 @@ mkdir -p ctf_me/$HOSTNAME
 #test if host is live
 if ping -c 1 -W 1 $HOSTNAME; then
   echo "$HOSTNAME is Alive"
+  echo ""
+  echo ""
+  echo ""
 else
 	echo "$HOSTNAME is Down"
 	echo "Check VPN Connection"
 	exit;
 fi
 
-echo -e "Start Nmap Scans"
+echo "Start Nmap Scans"
 
 # Make nmap directory
 mkdir ctf_me/$HOSTNAME/nmap
@@ -170,9 +175,9 @@ echo "Generic Version Scan"
 mkdir ctf_me/$HOSTNAME/nmap/Generic_OS
 nmap -sV -sC -O -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/Generic_OS/Generic_OS -Pn
 
-echo "Vulnerability Scan"
-mkdir ctf_me/$HOSTNAME/nmap/vulnerabilityScan
-nmap --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan/vulnerabilityScan -Pn
+#echo "Vulnerability Scan"
+#mkdir ctf_me/$HOSTNAME/nmap/vulnerabilityScan
+#nmap -T4 --script vuln -p $portlist $IP -oA ctf_me/$HOSTNAME/nmap/vulnerabilityScan/vulnerabilityScan 
 
 echo "Scan UDP"
 mkdir ctf_me/$HOSTNAME/nmap/UDPScan
@@ -203,21 +208,21 @@ command -v gobuster >/dev/null 2>&1 ||
 
 if [[ $portlist == *"80"* ]]; then
 	echo "Directory Enumeration via Port 80"
-	gobuster -e -u http://$IP:80/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_80_output.txt
+	gobuster dir -u http://$IP:80/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_80_output.txt -t 50 --wildcard switch
 else
 	echo "Port 80 is not open skipping Directory Enumeration Attempt 1"
 fi
 
 if [[ $portlist == *"443"* ]]; then
 	echo "Directory Enumeration via Port 443"
-	gobuster -e -u http://$IP:443/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_443_output.txt
+	gobuster dir -u http://$IP:443/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_443_output.txt -t 50
 else
 	echo "Port 443 is not open skipping Directory Enumeration Attempt 2"
 fi
 
 if [[ $portlist == *"8080"* ]]; then
 	echo "Directory Enumeration via Port 8080"
-	gobuster -e -u http://$IP:8080/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_8080_output.txt
+	gobuster dir -u http://$IP:8080/ -w /usr/share/wordlists/rockyou.txt -o ctf_me/$HOSTNAME/gobuster_output/port_8080_output.txt -t 50
 else
 	echo "Port 8080 is not open skipping Directory Enumeration Attempt 3"
 fi
@@ -226,7 +231,7 @@ fi
 
 echo "Checking for sublist3r"
 
-command -v gobuster >/dev/null 2>&1 || 
+command -v sublist3r >/dev/null 2>&1 || 
 { 
 	echo >&2 "sublist3r was not found\n********Installing********"; 
 	apt install sublist3r;
